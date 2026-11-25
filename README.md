@@ -10,7 +10,7 @@ python3 compare.py             # 3-way folder compare: MATCH / DIFFER
 tests/scenarios.sh             # 18 automated scenarios (about 8 minutes). Stop run.py first, as they use the same ports
 ```
 
-- `NOTE.md`: the one-page answers to the four questions.
+- `NOTE.md` (and `NOTE.pdf`, one A4 page): the answers to the four questions.
 - `SPEC.md`: requirements, the conflict rule, the protocol and the state format.
 - `TEST_PLAN.md`: the same scenarios as copy-paste commands to run by hand.
 
