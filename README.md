@@ -10,8 +10,8 @@ python3 compare.py             # 3-way folder compare: MATCH / DIFFER
 tests/scenarios.sh             # 18 automated scenarios (about 8 minutes). Stop run.py first, as they use the same ports
 ```
 
-- `NOTE.md` (and `NOTE.pdf`, one A4 page): the answers to the four questions.
-- `SPEC.md`: requirements, the conflict rule, the protocol and the state format.
-- `TEST_PLAN.md`: the same scenarios as copy-paste commands to run by hand.
+- [`NOTE.md`](NOTE.md) (and `NOTE.pdf`, one A4 page): the answers to the four questions.
+- [`SPEC.md`](SPEC.md): requirements, the conflict rule, the protocol and the state format.
+- [`tests/MANUAL.md`](tests/MANUAL.md): the same scenarios as `tests/scenarios.sh`, as copy-paste commands to run by hand.
 
 Clashes are written to `node-x/conflicts.log`. Bookkeeping (`state.json`, `tmp/`, `conflicts.log`, `OFFLINE`) lives in `node-x/`, never inside `shared/`.

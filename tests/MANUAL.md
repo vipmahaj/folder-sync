@@ -1,4 +1,4 @@
-# Test plan
+# Manual test plan
 
 Run everything from the repo root. **Terminal 1** runs the nodes. **Terminal 2** runs the tests.
 
