@@ -185,4 +185,4 @@ same
 python3 compare.py      # prints per-file fingerprints for all 3 nodes and MATCH / DIFFER
 ```
 
-The automated version of T1–T17 will be `tests/scenarios.sh`. It runs each scenario from a fresh start and stops at the first failure.
+The automated version of T1–T17 is `tests/scenarios.sh`. It runs each scenario from a fresh start and stops at the first failure.
