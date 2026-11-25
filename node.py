@@ -357,4 +357,7 @@ if __name__ == "__main__":
     node = Node(a.id, a.root, [p for p in a.peers.split(",") if p])
     threading.Thread(target=serve, args=(node, a.port), daemon=True).start()
     node.log(f"listening on {a.port}, peers {node.peers}")
-    node.run()
+    try:
+        node.run()
+    except KeyboardInterrupt:  # Ctrl-C in the run.py terminal reaches every node
+        node.save()
