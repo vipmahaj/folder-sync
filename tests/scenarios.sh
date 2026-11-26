@@ -187,8 +187,31 @@ t17() { begin T17 "binary file [R10]"
   check "identical bytes everywhere" same
   end; }
 
+t18() { begin T18 "file on one node, folder of the same name on another [R3, R5]"
+  off b
+  echo notes > node-a/shared/photos
+  mkdir node-b/shared/photos; echo pic > node-b/shared/photos/p.jpg; sleep 2
+  on b; w; w
+  check "PATH-CLASH logged"                   logged PATH-CLASH
+  check "logged once, not every round"        eval '[ "$(cat node-*/conflicts.log 2>/dev/null | grep -c PATH-CLASH)" -le 10 ]'
+  check "nothing overwritten"                 eval 'has node-a/shared/photos notes && has node-b/shared/photos/p.jpg pic'
+  mv node-a/shared/photos node-a/shared/photos.txt; w; w
+  check "after a rename both sync"            eval 'has node-c/shared/photos.txt notes && has node-c/shared/photos/p.jpg pic'
+  check "all three match"                     same
+  end; }
+
+t19() { begin T19 "replace a file with a folder of the same name, and back [R1, R5]"
+  echo notes > node-a/shared/photos; w
+  rm node-a/shared/photos; mkdir node-a/shared/photos; echo pic > node-a/shared/photos/p.jpg; w
+  check "folder replaced the file everywhere" eval 'has node-b/shared/photos/p.jpg pic && has node-c/shared/photos/p.jpg pic'
+  rm -r node-b/shared/photos; echo back > node-b/shared/photos; w
+  check "file replaced the folder everywhere" eval 'has node-a/shared/photos back && has node-c/shared/photos back'
+  check "no PATH-CLASH"                       eval '! logged PATH-CLASH'
+  check "all three match"                     same
+  end; }
+
 : > test-run.log
-TESTS=${*:-"t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17"}
+TESTS=${*:-"t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19"}
 for t in $TESTS; do "$t"; done
 echo; echo "passed: $PASS  failed: $FAIL${FAILS:+  ($FAILS )}"
 [ "$FAIL" = 0 ]

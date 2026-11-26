@@ -176,6 +176,28 @@ head -c 200000 /dev/urandom > node-a/shared/blob.bin; w
 shasum -a 256 node-*/shared/blob.bin       # three identical hashes
 ```
 
+## T18 File on one node, folder of the same name on another
+```bash
+off b
+echo notes > node-a/shared/photos
+mkdir node-b/shared/photos; echo pic > node-b/shared/photos/p.jpg
+on b; w; w
+logs                                       # a few PATH-CLASH lines, not a new one every second
+cat node-a/shared/photos; ls node-b/shared/photos   # notes / p.jpg: nothing overwritten
+mv node-a/shared/photos node-a/shared/photos.txt; w; w
+same                                       # photos.txt and photos/p.jpg on all three
+```
+
+## T19 Replace a file with a folder of the same name, and back (all online)
+```bash
+echo notes > node-a/shared/photos; w
+rm node-a/shared/photos; mkdir node-a/shared/photos; echo pic > node-a/shared/photos/p.jpg; w
+ls node-c/shared/photos                    # p.jpg: the folder replaced the file
+rm -r node-b/shared/photos; echo back > node-b/shared/photos; w
+cat node-c/shared/photos                   # back: the file replaced the folder
+logs; same                                 # no PATH-CLASH
+```
+
 ---
 
 ## Final convergence check (after a messy session)
@@ -185,4 +207,4 @@ same
 python3 compare.py      # prints per-file fingerprints for all 3 nodes and MATCH / DIFFER
 ```
 
-The automated version of T1–T17 is `tests/scenarios.sh`. It runs each scenario from a fresh start and stops at the first failure.
+The automated version of T1–T19 is `tests/scenarios.sh`. It runs each scenario from a fresh start and prints `ok` or `FAIL` for every check.

@@ -34,7 +34,7 @@ rm node-b/OFFLINE       # B syncs again: it gets what it missed, and A and C get
 Stop `run.py` first (Ctrl-C in terminal 1), because the tests start their own nodes on the same ports. Each scenario starts from empty folders, so **the tests delete `node-a/`, `node-b/` and `node-c/`**.
 
 ```bash
-tests/scenarios.sh          # all 18 automated scenarios, about 8 minutes
+tests/scenarios.sh          # all 20 automated scenarios, about 8 minutes
 tests/scenarios.sh t3 t5    # only the scenarios you name
 ```
 

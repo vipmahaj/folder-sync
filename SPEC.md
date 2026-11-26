@@ -36,7 +36,7 @@ This is the contract the code follows. `NOTE.md` explains the same thing in plai
 
 ## The rule: comparing local L with remote R for one path
 
-1. If R ≥ L in every column, **adopt R**. If L ≥ R in every column, do nothing.
+1. If R ≥ L in every column, **adopt R**. If L ≥ R in every column, do nothing. Adopting replaces whatever L had at the path, including a file replaced by a folder or a folder replaced by a file (the folder is removed after its contents).
 2. Otherwise they are concurrent. Let M be the maximum of each column, with no +1.
    - Same fingerprint: keep it, with scorecard M. `edited_at` and `edited_by` come from whichever of the two has the later `(edited_at, edited_by)`.
    - One null and one live: **the live one wins**, with scorecard M. Log `DELETE-UNDONE`.

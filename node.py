@@ -59,13 +59,17 @@ class Node:
         self.prev = {}   # previous scan's observations, for the two-scan stability check
         self.dirty = False
         self.was_offline = None
+        self.told = set()  # messages already written, so a clash retried every round is logged once
 
     # ---------- helpers ----------
     def log(self, msg):
         print(f"[{self.me}] {msg}", flush=True)
 
     def tell(self, kind, path, msg):
-        """How a person is told: a line in node-x/conflicts.log and on stdout."""
+        """How a person is told: a line in node-x/conflicts.log and on stdout. Exact repeats are skipped."""
+        if (kind, path, msg) in self.told:
+            return
+        self.told.add((kind, path, msg))
         line = f"{iso()}  {kind:<13} {path}  {msg}"
         self.log(line)
         with open(os.path.join(self.root, "conflicts.log"), "a") as f:
@@ -211,16 +215,17 @@ class Node:
             remote = json.loads(self.get(peer, "/index"))["files"]
         except (OSError, ValueError, KeyError, urllib.error.URLError):
             return  # peer offline or unreachable: try again next round
-        later_dirs = []
+        later = []
         for path in sorted(remote):
             if self.offline():
                 return
             r = remote[path]
-            if r["kind"] == "dir" and r["fingerprint"] is None:
-                later_dirs.append(path)  # delete folders after their contents
+            if (r["kind"] == "dir" and r["fingerprint"] is None) or \
+               (r["kind"] == "file" and os.path.isdir(self.disk(path))):
+                later.append(path)  # removes a local folder: do it after the folder's contents
                 continue
             self.apply(peer, path, r)
-        for path in reversed(later_dirs):
+        for path in reversed(later):
             if self.offline():
                 return
             self.apply(peer, path, remote[path])
@@ -236,19 +241,30 @@ class Node:
             self.resolve(peer, path, l, r)
 
     def materialize(self, peer, path, e):
-        """Make the disk match entry e. True on success."""
+        """Make the disk match entry e. True on success.
+
+        Callers have checked that the disk matches the stored entry, and e is newer than it, replaces a
+        delete, or won a clash whose loser was saved as a copy. So whatever is at the path may be
+        replaced, even a file by a folder or an emptied folder by a file."""
+        p = self.disk(path)
         try:
             if e["fingerprint"] is None:
                 if e["kind"] == "dir":
                     return self.remove_dir(path)
-                if os.path.lexists(self.disk(path)):
-                    os.remove(self.disk(path))
+                if os.path.lexists(p):
+                    os.remove(p)
                 return True
             if e["kind"] == "dir":
-                os.makedirs(self.disk(path), exist_ok=True)
+                if os.path.isfile(p):
+                    os.remove(p)  # the file was replaced by a folder of the same name
+                os.makedirs(p, exist_ok=True)
                 return True
             data = self.local_bytes(path, e["fingerprint"]) or self.fetch(peer, path, e["fingerprint"])
             if data is None:
+                return False
+            if os.path.isdir(p) and not self.remove_dir(path):
+                self.tell("PATH-CLASH", path, f"version from {e['edited_by']} is a file, but the folder here "
+                                              f"still holds files; rename one")
                 return False
             self.write(path, data)
             return True
