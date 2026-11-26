@@ -1,20 +1,22 @@
 # Folder sync without a server: design note
 Vipul Mahajan · exact rule in `SPEC.md` · tests in `tests/scenarios.sh`
 
-Each node scans its folder every second and pulls every peer's file index. Each file version carries **counters `[A,B,C]`** (a version vector) and a **fingerprint** (SHA-256, or *deleted*). A node adds 1 to its own counter when it detects a local save or delete. Received versions keep their counters.
+Each node scans its folder every second and pulls every peer's file index. Each file version carries **counters `[A,B,C]`** (a version vector: how many of each node's changes this version includes) and a **fingerprint** (SHA-256, or *deleted*). A node adds 1 to its own counter when it detects a local save or delete. Received versions keep their counters.
 
 **1. The rule when nodes hold different versions X and Y of a file**
 1. If X's counters are ≥ Y's in every position, **X wins** (its author had seen Y). Deletes included.
 2. Otherwise they were made independently. Same fingerprint: nothing to do. One deleted: **keep the content.** Different contents: the later edit time (modification time where saved; tie → later node letter) keeps the name, and the other is saved as `name.conflict-<node>-<fingerprint[:8]>.ext`.
 3. The result takes the **maximum of each counter**, with nothing added, so every node reaches the same result on its own.
 
-*Example:* A `[2,0,0]` saved 10:05, B (offline) `[1,1,0]` saved 10:07. `report.txt` keeps B's text with `[2,1,0]`, and A's text goes to `report.conflict-A-f83ed89e.txt`.
+*Example:* A `[2,0,0]` saved 10:05, B (offline) `[1,1,0]` saved 10:07. Neither includes the other: A leads on A (2>1), B leads on B (1>0). `report.txt` keeps B's text with `[2,1,0]`, and A's text goes to `report.conflict-A-f83ed89e.txt`.
 
 **2. What it can't resolve, and what it does.** Each case below writes a line to `node-x/conflicts.log`.
 - **Two concurrent edits** (text or binary) are never merged. Both are kept (`CLASH`) and a person picks.
 - **Delete vs. concurrent edit:** the edit is kept (`DELETE-UNDONE`) and must be deleted again.
-- **Rename vs. edit of the old name:** a rename is a delete plus an add, so both names survive.
+- **Rename vs. edit of the old name:** a rename is a delete plus an add; the delete loses to the edit, so both names survive.
 - **File here, folder with the same name there:** the path is skipped (`PATH-CLASH`) until someone renames one.
+
+In every case both versions stay on disk and the log records it, so no change is lost without a record.
 
 **3. Assumptions.**
 - **Machines:** `shared/` and `node-x/` bookkeeping share a local disk, so renames are atomic. There are three fixed nodes. Clocks are roughly right; a wrong one only changes which version keeps the name, never whether it is kept.
